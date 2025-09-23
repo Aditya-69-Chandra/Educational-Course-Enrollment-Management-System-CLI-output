@@ -19,19 +19,33 @@ The project demonstrates **Object-Oriented Programming (OOP)** concepts like Enc
 
 ## 🛠 Project Structure
 edu/
+
 └── ccrm/
+
 ├── Main.java # Entry point of the application
+
 ├── cli/
+
 │ └── Menu.java # Command-line interface (menu system)
+
 ├── config/
+
 │ └── AppConfig.java # Application configuration
+
 ├── domain/
+
 │ ├── Course.java # Course entity
+
 │ ├── Enrollment.java # Enrollment entity
+
 │ ├── Grade.java # Grade entity
+
 │ ├── Instructor.java # Instructor entity
+
 │ ├── Person.java # Base class for people (students/instructors)
+
 │ └── Name.java # Name handling class
+
 └── README.md # (This file)
 
 ## ⚙️ Requirements
@@ -43,5 +57,7 @@ edu/
 
 ## ▶️ How to Run
 Step 1 - just download and paste this folder on your desktop .
-Step 2 - go the cmd file open it with notepad ,  change '\Aditya\' in cd /d C:\Users\Aditya\Desktop to your desktop path, save the file .
+
+Step 2 - go the cmd file open it with notepad ,  change "C:\Users\Aditya\Desktop" in cd /d C:\Users\Aditya\Desktop to with your desktop path, save the file .
+
 Step 3 - run the cmd . 
