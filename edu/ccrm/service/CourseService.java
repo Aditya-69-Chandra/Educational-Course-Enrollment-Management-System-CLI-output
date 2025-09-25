@@ -1,38 +1,29 @@
 package edu.ccrm.service;
 
-import java.util.*;
 import edu.ccrm.domain.Course;
+import edu.ccrm.util.CsvUtils;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CourseService {
-    private final Map<String, Course> courseMap = new HashMap<>();
+    private final List<Course> courses = new ArrayList<>();
 
-    public void addCourse(Course c) throws Exception {
-        if (courseMap.containsKey(c.getCode())) throw new Exception("Course code exists");
-        courseMap.put(c.getCode(), c);
+    public void addCourse(Course course) {
+        courses.add(course);
     }
 
-    public Course getCourse(String code) { 
-        return courseMap.get(code); 
+    public List<Course> getAllCourses() {
+        return new ArrayList<>(courses);
     }
 
-    public void deactivateCourse(String code) { 
-        courseMap.remove(code); 
+    public void loadCoursesFromCsv(String path) throws IOException {
+        List<Course> imported = CsvUtils.importCourses(path);
+        courses.addAll(imported);
     }
 
-    // Returns all courses
-    public List<Course> getAllCourses() { 
-        return new ArrayList<>(courseMap.values()); 
-    }
-
-    // Streams-based filter
-    public List<Course> filterByInstructor(String name) {
-        return courseMap.values().stream()
-            .filter(c -> c.toString().contains(name))
-            .toList();
-    }
-
-    // **Added to fix the Menu.java error**
-    public List<Course> listCourses() {
-        return getAllCourses();
+    public void saveCoursesToCsv(String path) throws IOException {
+        CsvUtils.exportCourses(path, courses);
     }
 }

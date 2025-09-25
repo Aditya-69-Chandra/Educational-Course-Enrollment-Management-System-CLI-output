@@ -1,307 +1,170 @@
 package edu.ccrm.cli;
 
+import edu.ccrm.domain.*;
 import edu.ccrm.service.StudentService;
 import edu.ccrm.service.CourseService;
-import edu.ccrm.domain.Student;
-import edu.ccrm.domain.Name;
-import edu.ccrm.domain.Course;
-import edu.ccrm.domain.Semester;
-import edu.ccrm.domain.Grade;
-import edu.ccrm.exception.DuplicateEnrollmentException;
+import edu.ccrm.util.CsvUtils;
 
-import java.util.Scanner;
-import java.util.List;
-import java.nio.file.*;
 import java.io.IOException;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.List;
+import java.util.Scanner;
+import java.util.UUID;
 
 public class Menu {
-    private final Scanner sc = new Scanner(System.in);
-    private final StudentService studentService = new StudentService();
-    private final CourseService courseService = new CourseService();
+    private final StudentService studentService;
+    private final CourseService courseService;
+    private final Scanner scanner;
 
-    public void start() {
-        outer: while (true) {
-            System.out.println("\nCampus Course Records Manager");
-            System.out.println("1) Manage Students");
-            System.out.println("2) Manage Courses");
-            System.out.println("3) Enroll Student");
-            System.out.println("4) Record Grade");
-            System.out.println("5) List Students");
-            System.out.println("6) List Courses");
-            System.out.println("7) Import Students from CSV");
-            System.out.println("8) Import Courses from CSV");
-            System.out.println("9) Export Students & Courses");
-            System.out.println("10) Backup Exported Files");
-            System.out.println("0) Exit");
-            System.out.print("Choose option: ");
+    public Menu(StudentService studentService, CourseService courseService) {
+        this.studentService = studentService;
+        this.courseService = courseService;
+        this.scanner = new Scanner(System.in);
+    }
 
-            String choice = sc.nextLine();
-            switch (choice) {
-                case "1": manageStudents(); break;
-                case "2": manageCourses(); break;
-                case "3": enrollStudent(); break;
-                case "4": recordGrade(); break;
-                case "5": listStudents(); break;
-                case "6": listCourses(); break;
-                case "7": importStudentsCSV(); break;
-                case "8": importCoursesCSV(); break;
-                case "9": exportData(); break;
-                case "10": backupData(); break;
-                case "0": 
-                    System.out.println("Goodbye."); 
-                    break outer;
-                default: 
-                    System.out.println("Invalid choice.");
+    public void show() {
+        while (true) {
+            System.out.println("\n===== MAIN MENU =====");
+            System.out.println("1. Add Student");
+            System.out.println("2. List Students");
+            System.out.println("3. Add Course");
+            System.out.println("4. List Courses");
+            System.out.println("5. Import Students from CSV");
+            System.out.println("6. Export Students to CSV");
+            System.out.println("7. Import Courses from CSV");
+            System.out.println("8. Export Courses to CSV");
+            System.out.println("0. Exit");
+            System.out.print("Choose: ");
+
+            String choice = scanner.nextLine();
+
+            try {
+                switch (choice) {
+                    case "1": addStudent(); break;
+                    case "2": listStudents(); break;
+                    case "3": addCourse(); break;
+                    case "4": listCourses(); break;
+                    case "5": importStudents(); break;
+                    case "6": exportStudents(); break;
+                    case "7": importCourses(); break;
+                    case "8": exportCourses(); break;
+                    case "0": return;
+                    default:  System.out.println("Invalid choice."); break;
+                }
+            } catch (IOException e) {
+                System.out.println("I/O error: " + e.getMessage());
             }
         }
     }
 
-    // =================== Student Management ===================
-    private void manageStudents() {
-        try {
-            System.out.print("Enter Student ID: ");
-            String id = sc.nextLine();
+    // --- Student Methods ---
+    private void addStudent() {
+        System.out.print("Enter Student ID: ");
+        String id = scanner.nextLine();
+        System.out.print("Enter First Name: ");
+        String first = scanner.nextLine();
+        System.out.print("Enter Last Name: ");
+        String last = scanner.nextLine();
+        System.out.print("Enter Email: ");
+        String email = scanner.nextLine();
+        System.out.print("Enter Registration Number: ");
+        String regNo = scanner.nextLine();
 
-            System.out.print("Enter Registration No: ");
-            String regNo = sc.nextLine();
-
-            System.out.print("Enter full name (First Last): ");
-            String[] nameParts = sc.nextLine().split(" ", 2);
-            if (nameParts.length < 2) {
-                System.out.println("Please enter first and last name.");
-                return;
-            }
-            Name name = new Name(nameParts[0], nameParts[1]);
-
-            System.out.print("Enter Email: ");
-            String email = sc.nextLine();
-
-            Student student = new Student(id, name, email, regNo);
-            studentService.addStudent(student);
-            System.out.println("Student added: " + student);
-        } catch (DuplicateEnrollmentException ex) {
-            System.out.println("Error: " + ex.getMessage());
-        }
+        Student student = new Student(id, new Name(first, last), email, regNo);
+        studentService.addStudent(student);
+        System.out.println("Student added.");
     }
 
-    // =================== Course Management ===================
-    private void manageCourses() {
-        try {
-            System.out.print("Enter Course Code: ");
-            String code = sc.nextLine();
-
-            System.out.print("Enter Course Title: ");
-            String title = sc.nextLine();
-
-            System.out.print("Enter Credits (integer): ");
-            int credits = Integer.parseInt(sc.nextLine());
-
-            System.out.print("Enter Instructor Name (First Last): ");
-            String[] instrNameParts = sc.nextLine().split(" ", 2);
-            Name instructorName = new Name(instrNameParts[0], instrNameParts[1]);
-            var instructor = new edu.ccrm.domain.Instructor("I" + code, instructorName, "instructor@example.com", "EID" + code);
-
-            System.out.print("Enter Semester (SPRING, SUMMER, FALL): ");
-            Semester semester = Semester.valueOf(sc.nextLine().toUpperCase());
-
-            System.out.print("Enter Department: ");
-            String dept = sc.nextLine();
-
-            Course course = new Course.Builder()
-                    .code(code)
-                    .title(title)
-                    .credits(credits)
-                    .instructor(instructor)
-                    .semester(semester)
-                    .department(dept)
-                    .build();
-
-            courseService.addCourse(course);
-            System.out.println("Course added: " + course);
-        } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
-
-    // =================== Enrollment ===================
-    private void enrollStudent() {
-        System.out.print("Enter Student RegNo: ");
-        String regNo = sc.nextLine();
-        Student student = studentService.getStudent(regNo);
-        if (student == null) {
-            System.out.println("Student not found.");
-            return;
-        }
-
-        System.out.print("Enter Course Code to enroll: ");
-        String courseCode = sc.nextLine();
-        Course course = courseService.getCourse(courseCode);
-        if (course == null) {
-            System.out.println("Course not found.");
-            return;
-        }
-
-        student.enrollCourse(courseCode);
-        System.out.println("Student enrolled: " + regNo + " in course " + courseCode);
-    }
-
-    // =================== Grading ===================
-    private void recordGrade() {
-        System.out.print("Enter Student RegNo: ");
-        String regNo = sc.nextLine();
-        Student student = studentService.getStudent(regNo);
-        if (student == null) {
-            System.out.println("Student not found.");
-            return;
-        }
-
-        System.out.print("Enter Course Code: ");
-        String courseCode = sc.nextLine();
-        if (!student.getEnrolledCourses().contains(courseCode)) {
-            System.out.println("Student is not enrolled in that course.");
-            return;
-        }
-
-        System.out.print("Enter Grade (S10, A9, B8, C7, D6, E5, F0): ");
-        String gradeVal = sc.nextLine().toUpperCase();
-        try {
-            Grade grade = Grade.valueOf(gradeVal);
-            student.setGrade(courseCode, grade);
-            System.out.println("Grade recorded: " + grade + " for course " + courseCode);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Invalid grade entered.");
-        }
-    }
-
-    // =================== List ===================
     private void listStudents() {
-        List<Student> students = studentService.listStudents();
+        List<Student> students = studentService.getAllStudents();
         if (students.isEmpty()) {
             System.out.println("No students found.");
-            return;
+        } else {
+            for (Student s : students) {
+                System.out.println(s);
+            }
         }
-        System.out.println("Students:");
-        students.forEach(System.out::println);
+    }
+
+    // --- Course Methods ---
+    private void addCourse() {
+        System.out.print("Enter Course Code: ");
+        String code = scanner.nextLine();
+        System.out.print("Enter Course Title: ");
+        String title = scanner.nextLine();
+        System.out.print("Enter Credits: ");
+        int credits = Integer.parseInt(scanner.nextLine());
+        System.out.print("Enter Instructor First Name: ");
+        String instFirst = scanner.nextLine();
+        System.out.print("Enter Instructor Last Name: ");
+        String instLast = scanner.nextLine();
+        Name instructorName = new Name(instFirst, instLast);
+        Instructor instructor = new Instructor(
+                UUID.randomUUID().toString(),
+                instructorName,
+                "",
+                ""
+        );
+        System.out.print("Enter Semester (SPRING/SUMMER/FALL/WINTER): ");
+        Semester semester = Semester.valueOf(scanner.nextLine().toUpperCase());
+        System.out.print("Enter Department: ");
+        String dept = scanner.nextLine();
+
+        Course course = new Course.Builder()
+                .code(code)
+                .title(title)
+                .credits(credits)
+                .instructor(instructor)
+                .semester(semester)
+                .department(dept)
+                .build();
+
+        courseService.addCourse(course);
+        System.out.println("Course added.");
     }
 
     private void listCourses() {
-        List<Course> courses = courseService.listCourses();
+        List<Course> courses = courseService.getAllCourses();
         if (courses.isEmpty()) {
             System.out.println("No courses found.");
-            return;
-        }
-        System.out.println("Courses:");
-        courses.forEach(System.out::println);
-    }
-
-    // =================== Import/Export ===================
-    private void importStudentsCSV() {
-        try (Stream<String> lines = Files.lines(Paths.get("test-data/students.csv"))) {
-            List<Student> students = lines.skip(1)
-                .map(line -> line.split(","))
-                .map(parts -> {
-                    String[] fullName = parts[2].split(" ", 2);
-                    Name name = new Name(fullName[0], fullName.length > 1 ? fullName[1] : "");
-                    return new Student(parts[0], name, parts[3], parts[1]);
-                })
-                .collect(Collectors.toList());
-
-            students.forEach(s -> {
-                try {
-                    studentService.addStudent(s);
-                } catch (DuplicateEnrollmentException e) {
-                    System.out.println("Failed to add student " + s.getFullName() + ": " + e.getMessage());
-                }
-            });
-
-            System.out.println("Imported " + students.size() + " students.");
-        } catch (IOException e) {
-            System.out.println("Error importing students: " + e.getMessage());
-        }
-    }
-
-    private void importCoursesCSV() {
-        try (Stream<String> lines = Files.lines(Paths.get("test-data/courses.csv"))) {
-            List<Course> courses = lines.skip(1)
-                .map(line -> line.split(","))
-                .map(parts -> new Course.Builder()
-                        .code(parts[0])
-                        .title(parts[1])
-                        .credits(Integer.parseInt(parts[2]))
-                        .instructor(new edu.ccrm.domain.Instructor(
-                                "I" + parts[0],
-                                new Name(parts[3].split(" ")[0], parts[3].split(" ").length > 1 ? parts[3].split(" ")[1] : ""),
-                                "instructor@example.com",
-                                "EID" + parts[0]))
-                        .semester(Semester.valueOf(parts[4].toUpperCase()))
-                        .department(parts[5])
-                        .build())
-                .collect(Collectors.toList());
-
-            courses.forEach(c -> {
-                try {
-                    courseService.addCourse(c);
-                } catch (Exception e) { // replace with the specific exception type if known
-                    System.out.println("Failed to add course " + c.getCode() + ": " + e.getMessage());
-                }
-            });
-
-            System.out.println("Imported " + courses.size() + " courses.");
-        } catch (IOException e) {
-            System.out.println("Error importing courses: " + e.getMessage());
-        }
-    }
-
-    private void exportData() {
-        try {
-            Files.createDirectories(Paths.get("export"));
-
-            // Export students
-            List<String> studentLines = studentService.listStudents().stream()
-                .map(s -> s.getId() + "," + s.getRegNo() + "," + s.getFullName() + "," + s.getEmail() + "," + s.getStatus())
-                .collect(Collectors.toList());
-            studentLines.add(0, "id,regNo,fullName,email,status");
-            Files.write(Paths.get("export/students_export.csv"), studentLines);
-
-            // Export courses
-            List<String> courseLines = courseService.listCourses().stream()
-                .map(c -> c.getCode() + "," + c.getTitle() + "," + c.getCredits() + "," + c.getInstructor().getFullName() + "," + c.getSemester() + "," + c.getDepartment())
-                .collect(Collectors.toList());
-            courseLines.add(0, "code,title,credits,instructor,semester,department");
-            Files.write(Paths.get("export/courses_export.csv"), courseLines);
-
-            System.out.println("Data exported successfully.");
-        } catch (IOException e) {
-            System.out.println("Error exporting data: " + e.getMessage());
-        }
-    }
-
-    private void backupData() {
-        try {
-            Path exportDir = Paths.get("export");
-            if (!Files.exists(exportDir)) {
-                System.out.println("Nothing to backup. Export first.");
-                return;
+        } else {
+            for (Course c : courses) {
+                System.out.println(c);
             }
-
-            Path backupDir = Paths.get("backup_" + System.currentTimeMillis());
-            Files.createDirectories(backupDir);
-
-            try (Stream<Path> paths = Files.walk(exportDir)) {
-                paths.filter(Files::isRegularFile).forEach(file -> {
-                    try {
-                        Files.copy(file, backupDir.resolve(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                });
-            }
-
-            System.out.println("Backup completed at " + backupDir.toAbsolutePath());
-        } catch (IOException e) {
-            System.out.println("Error during backup: " + e.getMessage());
         }
+    }
+
+    // --- CSV Import/Export ---
+    private void importStudents() throws IOException {
+        System.out.print("CSV file path: ");
+        String path = scanner.nextLine();
+        List<Student> imported = CsvUtils.importStudents(path);
+        for (Student s : imported) {
+            studentService.addStudent(s);
+        }
+        System.out.println("Imported " + imported.size() + " students.");
+    }
+
+    private void exportStudents() throws IOException {
+        System.out.print("CSV file path to save: ");
+        String path = scanner.nextLine();
+        CsvUtils.exportStudents(path, studentService.getAllStudents());
+        System.out.println("Students exported.");
+    }
+
+    private void importCourses() throws IOException {
+        System.out.print("CSV file path: ");
+        String path = scanner.nextLine();
+        List<Course> imported = CsvUtils.importCourses(path);
+        for (Course c : imported) {
+            courseService.addCourse(c);
+        }
+        System.out.println("Imported " + imported.size() + " courses.");
+    }
+
+    private void exportCourses() throws IOException {
+        System.out.print("CSV file path to save: ");
+        String path = scanner.nextLine();
+        CsvUtils.exportCourses(path, courseService.getAllCourses());
+        System.out.println("Courses exported.");
     }
 }

@@ -1,16 +1,15 @@
 package edu.ccrm;
 
 import edu.ccrm.cli.Menu;
-import java.util.logging.Logger;
+import edu.ccrm.service.StudentService;
+import edu.ccrm.service.CourseService;
 
 public class Main {
     public static void main(String[] args) {
-        try {
-            Menu menu = new Menu();
-            menu.start();
-        } catch (Throwable t) {
-            Logger.getLogger(Main.class.getName()).severe("Fatal error: " + t.getMessage());
-            System.out.println("A fatal error occurred. Exiting.");
-        }
+        StudentService studentService = new StudentService();
+        CourseService courseService = new CourseService();
+
+        Menu menu = new Menu(studentService, courseService);
+        menu.show();
     }
 }
