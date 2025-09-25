@@ -55,9 +55,10 @@ edu/
 
 ---
 
-## ▶️ How to Run
+## ▶️ How to Run / Useage
 Step 1 - just download and paste this folder on your desktop .
 
 Step 2 - go the cmd file open it with notepad ,  change "C:\Users\Aditya\Desktop" in cd /d C:\Users\Aditya\Desktop to with your desktop path, save the file .
 
 Step 3 - run the cmd . 
+
